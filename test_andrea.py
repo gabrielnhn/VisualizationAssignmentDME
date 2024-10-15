@@ -76,13 +76,15 @@ for id, item in enumerate(zip(index, counts)):
     views[id] = ColumnDataSource(dict(x_values=[x], y_values=[y]))
 
 cur_view = ColumnDataSource(dict())
+cur_fraction = ColumnDataSource(dict())
+empty = ColumnDataSource(dict())
 
 # source_income = original_income_data
 
 # Create the first plot (Education Bar Chart)
 p1 = figure(x_range=index, height=400, width=600, title="Source", toolbar_location="above", tools="pan,wheel_zoom,box_zoom,reset,tap")
 p1.vbar(x='x_values', top='y_values', width=0.5, source=source_education, line_color='lightblue', fill_color='lightblue', line_width=2.5)
-p1.vbar(x='x_values', top='y_values', width=0.5, source=source_education_divided, line_color='red', fill_color='red', line_width=2.5)
+p1.vbar(x='x_values', top='y_values', width=0.5, source=cur_fraction, line_color='red', fill_color='red', line_width=2.5)
 
 # Create the second plot (Income Bar Chart)
 p2 = figure(x_range=index, height=400, width=600, title="View", toolbar_location="above", tools="pan,wheel_zoom,box_zoom,reset")
@@ -119,22 +121,45 @@ p2.add_tools(hover2)
 # """)
 
 callback_code = """
+    console.log("Callback call");
     var indices = source_education.selected.indices;
-    var index = indices[0];
-    console.log("views");
-    console.log(views);
-    console.log("index");
-    console.log(index);
-    //cur_view.data = Object.assign( {}, views.get(index).data );
-    cur_view.data = views.get(index).data;
+
+    if (indices.length > 0) {
+        var index = indices[0];
+        cur_view.data = views.get(index).data;
+        cur_fraction.data = source_education_divided.data;
+        cur_fraction.selected.indices = indices;
+
+    }
+    else
+    {
+        console.log("ASSERT FAILED");
+        cur_fraction.data = empty.data;
+    }
+
+
+
+    //console.log(source_education.selected.indices.length);
+    //console.log("views");
+    //console.log(views);
+    //console.log("index");
+    //console.log(index);
+    //console.log("divided");
+    //console.log(source_education_divided);
 """
 
-# Add the callback to the first plot
-p1.select(type=TapTool).callback = CustomJS(args=dict(cur_view=cur_view, views=views,
-                                                      source_education=source_education), code=callback_code)
+callback = CustomJS(args=dict(cur_view=cur_view, views=views,
+                                                      source_education=source_education,
+                                                      source_education_divided=source_education_divided,
+                                                      cur_fraction=cur_fraction,
+                                                      empty=empty), code=callback_code)
 
-p3.select(type=TapTool).callback =  CustomJS(args=dict(cur_view=cur_view, views=views,
-                                                      source_education=source_education), code=callback_code)
+# Add the callback to the first plot
+# p1.select(type=TapTool).callback =  callback
+source_education.selected.js_on_change("indices", callback)
+# p1.select(type=TapTool).js_on_change("indices", callback)
+
+p3.select(type=TapTool).callback =  callback
 
 
 # Display the plots in a grid
