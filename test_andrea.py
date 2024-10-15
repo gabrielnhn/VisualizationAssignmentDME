@@ -47,6 +47,16 @@ data = pd.DataFrame({
     'Age': np.random.randint(18, 21, size=10)
 })
 
+glob_dict = {}
+for column in data.columns:
+    test = data[column].value_counts()
+    index = test.index.tolist()
+    counts = test.values.tolist()
+    dict_education = dict(x_values=index, y_values=counts)
+    source_education = ColumnDataSource(dict_education)
+    glob_dict[column] = dict_education
+print(glob_dict)
+
 test = data['Education'].value_counts()
 index = test.index.tolist()
 counts = test.values.tolist()
@@ -68,12 +78,18 @@ source_education_divided = ColumnDataSource(dict_education_divided)
 
 
 views = {}
+views_dict = {}
 for id, item in enumerate(zip(index, counts)):
 # for id, item in enumerate(zip(index_age, counts_age)):
     x, y = item
 
     # views[id] = ColumnDataSource(dataframe_result)
+    views_dict[id] = dict(x_values=[x], y_values=[y])
     views[id] = ColumnDataSource(dict(x_values=[x], y_values=[y]))
+
+
+
+
 
 cur_view = ColumnDataSource(dict())
 cur_fraction = ColumnDataSource(dict())
@@ -136,9 +152,6 @@ callback_code = """
         console.log("ASSERT FAILED");
         cur_fraction.data = empty.data;
     }
-
-
-
     //console.log(source_education.selected.indices.length);
     //console.log("views");
     //console.log(views);
@@ -156,10 +169,23 @@ callback = CustomJS(args=dict(cur_view=cur_view, views=views,
 
 # Add the callback to the first plot
 # p1.select(type=TapTool).callback =  callback
-source_education.selected.js_on_change("indices", callback)
 # p1.select(type=TapTool).js_on_change("indices", callback)
 
-p3.select(type=TapTool).callback =  callback
+
+# source_education.selected.js_on_change("indices", callback)
+
+def python_callback(attr, old, new):
+    print("CALLBACK")
+    print(attr, new)
+    print()
+    if new:
+        # cur_view.data = views[new[0]].data
+        cur_view.data = views_dict[new[0]]
+
+source_education.selected.on_change("indices", python_callback)
+
+
+# p3.select(type=TapTool).callback = python_callback
 
 
 # Display the plots in a grid
