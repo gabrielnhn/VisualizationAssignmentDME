@@ -30,12 +30,63 @@ data.head()
 
 ###############################
 # VIS1 COPY
+def create_bar_plot(data_original, clean = True):
+    
+    output_plots = {}
+    columns = data.columns.tolist()
+    for column in columns:
+        # replace '?' by NAN values
+        column_data = data[column].replace("?", np.nan).dropna()
+        # print(column_data)
+        # numerical columns
+        if pd.api.types.is_numeric_dtype(column_data):
+            sorted_counts = column_data.value_counts().sort_index()
+            index = sorted_counts.index.tolist()
+            counts = sorted_counts.values.tolist()  
+            # print(index[0:30],counts[0:30])
+        #categorical columns
+        else:
+            print(column_data)
+            column_data = column_data.apply(lambda sal: sal.strip('.'))
+
+            categories = column_data.value_counts().index.tolist()
+            
+            counts = column_data.value_counts().values.tolist()
+            # print(categories[0:30],counts[0:30])
+
+        if pd.api.types.is_numeric_dtype(column_data):
+            frequency_plot = {'x_values': index, 'y_values': counts}
+            p = figure(height=600, width=600, title=column.title(), toolbar_location=None, tools="")
+            p.xaxis.formatter = NumeralTickFormatter(format="0,0")
+        else:
+            frequency_plot = {'x_values': categories, 'y_values': counts}
+            p = figure(x_range=categories,height=600, width=600, title=column.title(), toolbar_location=None, tools="")
+
+
+        source = ColumnDataSource(frequency_plot)
+        p.vbar(x='x_values', top='y_values', width=0.5, source=source, line_color='lightblue', fill_color='lightblue', line_width=2.5)
+        # Add hover tool to display values on hover
+        hover = HoverTool()
+        hover.tooltips = [(column.title(), "@x_values"), ("Count", "@y_values")]
+        p.add_tools(hover)
+
+
+        # Format the y-axis with commas as well
+        # p.yaxis.formatter = NumeralTickFormatter(format="0,0",use_scientific = False)
+        p.xaxis.major_label_orientation = 1.0
+
+        output_plots[column] = p
+        # show(p)
+    return output_plots
+
+
+
 from bokeh.plotting import figure, show
 from bokeh.models import ColumnDataSource, HoverTool, TapTool, CustomJS
 from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
 
-output_notebook()
+# output_notebook()
 
 # Example Data
 import pandas as pd
@@ -174,15 +225,34 @@ callback = CustomJS(args=dict(cur_view=cur_view, views=views,
 
 # source_education.selected.js_on_change("indices", callback)
 
+class custom_callbacks:
+    def __init__(self, source=None, figure=None):
+        self.source = source
+        self.figure = figure
+
+    def default_function(self, attr, old, new):
+        # print(f"CALLBACK FOR {self.param.__name__}")
+        print(f"CALLBACK FOR SOURCE {self.source} IN PLOT {self.figure}")
+        print("\t")
+        # print(attr, new)
+        # print()
+        if new:
+            # cur_view.data = views[new[0]].data
+            cur_view.data = views_dict[new[0]]
+
+
+
 def python_callback(attr, old, new):
-    print("CALLBACK")
-    print(attr, new)
+    # print("CALLBACK")
     print()
+    # print(attr, new)
+    # print()
     if new:
         # cur_view.data = views[new[0]].data
         cur_view.data = views_dict[new[0]]
 
-source_education.selected.on_change("indices", python_callback)
+# source_education.selected.on_change("indices", python_callback)
+source_education.selected.on_change("indices", custom_callbacks(source_education, p1).default_function)
 
 
 # p3.select(type=TapTool).callback = python_callback
