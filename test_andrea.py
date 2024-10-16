@@ -255,30 +255,30 @@ import numpy as np
 #     }
 # """)
 
-callback_code = """
-    console.log("Callback call");
-    var indices = source_education.selected.indices;
+# callback_code = """
+#     console.log("Callback call");
+#     var indices = source_education.selected.indices;
 
-    if (indices.length > 0) {
-        var index = indices[0];
-        cur_view.data = views.get(index).data;
-        cur_fraction.data = source_education_divided.data;
-        cur_fraction.selected.indices = indices;
+#     if (indices.length > 0) {
+#         var index = indices[0];
+#         cur_view.data = views.get(index).data;
+#         cur_fraction.data = source_education_divided.data;
+#         cur_fraction.selected.indices = indices;
 
-    }
-    else
-    {
-        console.log("ASSERT FAILED");
-        cur_fraction.data = empty.data;
-    }
-    //console.log(source_education.selected.indices.length);
-    //console.log("views");
-    //console.log(views);
-    //console.log("index");
-    //console.log(index);
-    //console.log("divided");
-    //console.log(source_education_divided);
-"""
+#     }
+#     else
+#     {
+#         console.log("ASSERT FAILED");
+#         cur_fraction.data = empty.data;
+#     }
+#     //console.log(source_education.selected.indices.length);
+#     //console.log("views");
+#     //console.log(views);
+#     //console.log("index");
+#     //console.log(index);
+#     //console.log("divided");
+#     //console.log(source_education_divided);
+# """
 
 # callback = CustomJS(args=dict(cur_view=cur_view, views=views,
 #                                                       source_education=source_education,
@@ -300,17 +300,13 @@ class custom_callbacks:
         self.figure = figure
 
     def default_function(self, attr, old, new):
-        # print(f"CALLBACK FOR {self.param.__name__}")
         print("\t")
-        # print(attr, new)
-        # print()
         if new:
             index = new[0]
-            new_values = function_all_p(data, self.feature, index)
+            # new_values = function_all_p(data, self.feature, index)
+            # new_values = precomputed[self.feature, index]
             for column, new_source in new_values.items():
                 plot_dict[column]["source"].data = new_source
-
-
 
         else:
             index = None
@@ -325,11 +321,10 @@ class custom_callbacks:
 grid_list, plot_dict = create_bar_plot(data)
 
 
-print("COLUMNS IN MY COOL DICT")
+# print("COLUMNS IN MY COOL DICT")
 for column, d in plot_dict.items():
-    print(column)
+    # print(column)
     d["source"].selected.on_change("indices", custom_callbacks(column, d["source"], d["plot"]).default_function)
-
 
 
 # source_education.selected.on_change("indices", python_callback)
