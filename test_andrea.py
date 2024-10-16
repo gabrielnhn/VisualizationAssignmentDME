@@ -102,7 +102,9 @@ def create_bar_plot(data_original, clean = True):
 
 
         source = ColumnDataSource(frequency_plot)
+        compare = ColumnDataSource({})
         p.vbar(x='x_values', top='y_values', width=0.5, source=source, line_color='lightblue', fill_color='lightblue', line_width=2.5)
+        p.vbar(x='x_values', top='y_values', width=0.5, source=compare, line_color='lightblue', fill_color='red', line_width=2.5)
         # Add hover tool to display values on hover
         hover = HoverTool()
         hover.tooltips = [(column.title(), "@x_values"), ("Count", "@y_values")]
@@ -116,7 +118,8 @@ def create_bar_plot(data_original, clean = True):
         output_plots_dict[column] = {}
 
         output_plots_dict[column]["plot"] = p
-        output_plots_dict[column]["source"] = source
+        output_plots_dict[column]["source_all"] = source
+        output_plots_dict[column]["source_compare"] = compare
         output_plots.append(p)
         # show(p)
 
@@ -135,7 +138,8 @@ def function_all_p(data,column,index):
             print(data_subset)
     # select all the columns except the 'Education'
     for data_column in data.columns:
-        if data_column != column:
+        # if data_column != column:
+        if True:
             # get x_values for all other columns
             x_values = glob_dict[data_column]['x_values']
             # count the new y_values
@@ -143,6 +147,8 @@ def function_all_p(data,column,index):
             for x in x_values:
                 new_y_values.append(len(data_subset[data_subset[data_column] == x]))
             dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
+        
+
     return dictionary
 
 
@@ -303,13 +309,19 @@ class custom_callbacks:
         print("\t")
         if new:
             index = new[0]
-            # new_values = function_all_p(data, self.feature, index)
+            new_values = function_all_p(data, self.feature, index)
             # new_values = precomputed[self.feature, index]
             for column, new_source in new_values.items():
-                plot_dict[column]["source"].data = new_source
+                # plot_dict[column]["source"].data = new_source
+                plot_dict[column]["source_compare"].data = new_source
+                plot_dict[column]["source_compare"].selected.indices = []
+            
+            # plot_dict[self.feature]["source_compare"].data = 
 
         else:
             index = None
+            for column in plot_dict:
+                plot_dict[column]["source_compare"].data = {}
 
 
         # print(f"CALLBACK in feature `{self.feature}`, {self.source} IN PLOT {self.figure}, INDEX {index}")
@@ -324,7 +336,7 @@ grid_list, plot_dict = create_bar_plot(data)
 # print("COLUMNS IN MY COOL DICT")
 for column, d in plot_dict.items():
     # print(column)
-    d["source"].selected.on_change("indices", custom_callbacks(column, d["source"], d["plot"]).default_function)
+    d["source_all"].selected.on_change("indices", custom_callbacks(column, d["source_all"], d["plot"]).default_function)
 
 
 # source_education.selected.on_change("indices", python_callback)
