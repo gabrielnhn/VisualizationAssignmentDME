@@ -29,6 +29,15 @@ data = pd.read_csv("datasets/Visualization/adult_all.csv")
 data.head()
 
 
+# data = pd.DataFrame({
+#     'Education': np.random.choice(['Bachelors', 'Masters', 'PhD'], size=10),
+#     'Income': np.random.choice(['<=50K', '>50K'], size=10),
+#     'Age': np.random.randint(18, 21, size=10)
+# })
+# print(data)
+
+
+
 def arrange_plots_in_grid(plot_list, num_cols=4):
     # Calculate the number of rows required
     num_rows = math.ceil(len(plot_list) / num_cols)
@@ -46,6 +55,18 @@ def arrange_plots_in_grid(plot_list, num_cols=4):
 
 ###############################
 # VIS1 COPY
+#global dict whatever
+glob_dict = {}
+for column in data.columns:
+    test = data[column].value_counts()
+    index = test.index.tolist()
+    counts = test.values.tolist()
+    dict_education = dict(x_values=index, y_values=counts)
+    glob_dict[column] = dict_education
+# print(glob_dict)
+
+
+
 def create_bar_plot(data_original, clean = True):
     
     output_plots_dict = {}
@@ -92,12 +113,45 @@ def create_bar_plot(data_original, clean = True):
         # p.yaxis.formatter = NumeralTickFormatter(format="0,0",use_scientific = False)
         p.xaxis.major_label_orientation = 1.0
 
-        output_plots_dict[column] = p, source
+        output_plots_dict[column] = {}
+
+        output_plots_dict[column]["plot"] = p
+        output_plots_dict[column]["source"] = source
         output_plots.append(p)
         # show(p)
 
     print(output_plots)
     return output_plots, output_plots_dict
+
+
+
+### magic
+def function_all_p(data,column,index):
+    dictionary = {}
+    for key in glob_dict:
+        if key == column:
+            attribute = glob_dict[key]['x_values'][index]
+            data_subset = data[data[column] == attribute]
+            print(data_subset)
+    # select all the columns except the 'Education'
+    for data_column in data.columns:
+        if data_column != column:
+            # get x_values for all other columns
+            x_values = glob_dict[data_column]['x_values']
+            # count the new y_values
+            new_y_values = []
+            for x in x_values:
+                new_y_values.append(len(data_subset[data_subset[data_column] == x]))
+            dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
+    return dictionary
+
+
+# for column in column:
+#     for index in column.attributes:
+#         dict = function_all_p(data, column, index)
+
+# print(function_all_p(data,'Education',0))
+
 
 
 from bokeh.plotting import figure, show
@@ -111,11 +165,6 @@ from bokeh.io import output_notebook
 import pandas as pd
 import numpy as np
 
-# data = pd.DataFrame({
-#     'Education': np.random.choice(['Bachelors', 'Masters', 'PhD'], size=10),
-#     'Income': np.random.choice(['<=50K', '>50K'], size=10),
-#     'Age': np.random.randint(18, 21, size=10)
-# })
 
 # glob_dict = {}
 # for column in data.columns:
@@ -257,11 +306,17 @@ class custom_callbacks:
         # print()
         if new:
             index = new[0]
-            pass
+            new_values = function_all_p(data, self.feature, index)
+            for column, new_source in new_values.items():
+                plot_dict[column]["source"].data = new_source
+
+
+
         else:
             index = None
 
-        print(f"CALLBACK in feature `{self.feature}`, {self.source} IN PLOT {self.figure}, INDEX {index}")
+
+        # print(f"CALLBACK in feature `{self.feature}`, {self.source} IN PLOT {self.figure}, INDEX {index}")
             # cur_view.data = views[new[0]].data
             # cur_view.data = views_dict[new[0]]
 
@@ -270,9 +325,10 @@ class custom_callbacks:
 grid_list, plot_dict = create_bar_plot(data)
 
 
-
-for column, (plot, source) in plot_dict.items():
-    source.selected.on_change("indices", custom_callbacks(column, source, plot).default_function)
+print("COLUMNS IN MY COOL DICT")
+for column, d in plot_dict.items():
+    print(column)
+    d["source"].selected.on_change("indices", custom_callbacks(column, d["source"], d["plot"]).default_function)
 
 
 
