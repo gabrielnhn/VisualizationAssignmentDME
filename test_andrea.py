@@ -69,10 +69,15 @@ for column in data.columns:
 
 def create_bar_plot(data_original, clean = True):
     
+    # TOOLS="pan,wheel_zoom,box_zoom,reset,tap"
+    TOOLS="pan,box_zoom,tap, hover"
+    
+
     output_plots_dict = {}
     output_plots = []
     columns = data.columns.tolist()
     for column in columns:
+        TOOLTIPS=[(column.title(), "@x_values"), ("Count", "@y_values")]
         # replace '?' by NAN values
         column_data = data[column].replace("?", np.nan).dropna()
         # print(column_data)
@@ -94,11 +99,11 @@ def create_bar_plot(data_original, clean = True):
 
         if pd.api.types.is_numeric_dtype(column_data):
             frequency_plot = {'x_values': index, 'y_values': counts}
-            p = figure(height=600, width=600, title=column.title(), toolbar_location=None, tools="pan,wheel_zoom,box_zoom,reset,tap")
+            p = figure(height=600, width=600, title=column.title(), toolbar_location=None, tools=TOOLS, tooltips=TOOLTIPS)
             p.xaxis.formatter = NumeralTickFormatter(format="0,0")
         else:
             frequency_plot = {'x_values': categories, 'y_values': counts}
-            p = figure(x_range=categories,height=600, width=600, title=column.title(), toolbar_location=None, tools="pan,wheel_zoom,box_zoom,reset,tap")
+            p = figure(x_range=categories,height=600, width=600, title=column.title(), toolbar_location=None, tools=TOOLS, tooltips=TOOLTIPS)
 
 
         source = ColumnDataSource(frequency_plot)
@@ -106,9 +111,9 @@ def create_bar_plot(data_original, clean = True):
         p.vbar(x='x_values', top='y_values', width=0.5, source=source, line_color='lightblue', fill_color='lightblue', line_width=2.5)
         p.vbar(x='x_values', top='y_values', width=0.5, source=compare, line_color='lightblue', fill_color='red', line_width=2.5)
         # Add hover tool to display values on hover
-        hover = HoverTool()
-        hover.tooltips = [(column.title(), "@x_values"), ("Count", "@y_values")]
-        p.add_tools(hover)
+        # hover = HoverTool()
+        # hover.tooltips = [(column.title(), "@x_values"), ("Count", "@y_values")]
+        # p.add_tools(hover)
 
 
         # Format the y-axis with commas as well
