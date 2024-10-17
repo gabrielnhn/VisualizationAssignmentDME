@@ -261,36 +261,58 @@ import numpy as np
 #     }
 # """)
 
-# callback_code = """
-#     console.log("Callback call");
-#     var indices = source_education.selected.indices;
+javascript_code = """
+    function functionAllP(data, column, index) {
+        let dictionary = {};
 
-#     if (indices.length > 0) {
-#         var index = indices[0];
-#         cur_view.data = views.get(index).data;
-#         cur_fraction.data = source_education_divided.data;
-#         cur_fraction.selected.indices = indices;
+        // Get the selected attribute value from the specified column and index
+        let attribute = globDict[column].x_values[index];
 
-#     }
-#     else
-#     {
-#         console.log("ASSERT FAILED");
-#         cur_fraction.data = empty.data;
-#     }
-#     //console.log(source_education.selected.indices.length);
-#     //console.log("views");
-#     //console.log(views);
-#     //console.log("index");
-#     //console.log(index);
-#     //console.log("divided");
-#     //console.log(source_education_divided);
-# """
+        // Filter the data subset based on the selected attribute
+        let dataSubset = data.filter(row => row[column] === attribute);
 
-# callback = CustomJS(args=dict(cur_view=cur_view, views=views,
-#                                                       source_education=source_education,
-#                                                       source_education_divided=source_education_divided,
-#                                                       cur_fraction=cur_fraction,
-#                                                       empty=empty), code=callback_code)
+        // Loop through each column in the dataset
+        Object.keys(data.columns).forEach(dataColumn => {
+            let x_values = globDict[dataColumn].x_values;  // Get the x_values for the current column
+            let new_y_values = [];
+
+            // For each x_value, count how many times it appears in the filtered subset
+            x_values.forEach(x => {
+                let count = dataSubset.filter(row => row[dataColumn] === x).length;
+                new_y_values.push(count);
+            });
+
+            // Store the updated x_values and new_y_values in the dictionary for the current column
+            dictionary[dataColumn] = {
+                x_values: x_values,
+                y_values: new_y_values
+            };
+        });
+
+        return dictionary;
+    }
+
+    var new_indices = cb_obj.indices;
+
+    if (new_indices.length > 0) {
+        var index = new_indices[0];
+        var new_values = functionAllP(data, feature, index);
+
+        for (var column in new_values) {
+            var new_source = new_values[column];
+
+            plot_dict[column].source_compare.data = new_source;
+            plot_dict[column].source_compare.selected.indices = [];
+            plot_dict[column].plot.title.text = column.charAt(0).toUpperCase() + column.slice(1);
+        }
+    } else {
+        for (var column in plot_dict) {
+            plot_dict[column].source_compare.data = {};
+            plot_dict[column].plot.title.text = column.charAt(0).toUpperCase() + column.slice(1);
+        }
+    }    
+"""
+
 
 # Add the callback to the first plot
 # p1.select(type=TapTool).callback =  callback
@@ -348,11 +370,15 @@ class custom_callbacks:
 grid_list, plot_dict = create_bar_plot(data)
 
 
+
+
+
 # print("COLUMNS IN MY COOL DICT")
 for column, d in plot_dict.items():
+    default_function_js = CustomJS(args=dict(plot_dict=plot_dict, data=data, feature=column), code=javascript_code)
     # print(column)
-    d["source_all"].selected.on_change("indices", custom_callbacks(column, d["source_all"], d["plot"]).default_function)
-
+    # d["source_all"].selected.on_change("indices", custom_callbacks(column, d["source_all"], d["plot"]).default_function)
+    d['source_all'].selected.js_on_change('indices', default_function_js)
 
 # source_education.selected.on_change("indices", python_callback)
 # source_education.selected.on_change("indices", custom_callbacks(source_education, p1).default_function)
