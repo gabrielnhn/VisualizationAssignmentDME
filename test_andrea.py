@@ -135,25 +135,25 @@ def create_bar_plot(data_original, clean = True):
 
 
 ### magic
-def function_all_p(data,column,index):
-    dictionary = {}
-    for key in glob_dict:
-        if key == column:
-            attribute = glob_dict[key]['x_values'][index]
-            data_subset = data[data[column] == attribute]
-            # print(data_subset)
-    # select all the columns except the 'Education'
-    for data_column in data.columns:
-        # if data_column != column:
-        if True:
-            # get x_values for all other columns
-            x_values = glob_dict[data_column]['x_values']
-            # count the new y_values
-            new_y_values = []
-            for x in x_values:
-                new_y_values.append(len(data_subset[data_subset[data_column] == x]))
-            dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
-    return dictionary
+# def function_all_p(data,column,index):
+#     dictionary = {}
+#     for key in glob_dict:
+#         if key == column:
+#             attribute = glob_dict[key]['x_values'][index]
+#             data_subset = data[data[column] == attribute]
+#             # print(data_subset)
+#     # select all the columns except the 'Education'
+#     for data_column in data.columns:
+#         # if data_column != column:
+#         if True:
+#             # get x_values for all other columns
+#             x_values = glob_dict[data_column]['x_values']
+#             # count the new y_values
+#             new_y_values = []
+#             for x in x_values:
+#                 new_y_values.append(len(data_subset[data_subset[data_column] == x]))
+#             dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
+#     return dictionary
         
 
 # def function_all_p(data,column_name,index):
@@ -187,7 +187,26 @@ def function_all_p(data,column,index):
 #                 local_dictionary[key] = {'x_values': x_values,'y_values': new_y_values}
 #     return local_dictionary
 
-
+def function_all_p(data,column_name,index):
+    local_dictionary = {}
+    attribute = glob_dict[column_name]['x_values'][index]
+    # select all the columns except the column_name
+    for key in glob_dict:
+        # if key != column_name:
+        # get x_values for all other columns
+        x_values = glob_dict[key]['x_values']
+        # count the new y_values
+        column_data = data[data[column_name] == attribute][key]
+        index = column_data.value_counts().index.tolist()
+        counts = column_data.value_counts().values.tolist()
+        new_y_values = []
+        for x in x_values:
+            if x in index:
+                new_y_values.append(counts[index.index(x)])
+            else:
+                new_y_values.append(0)
+        local_dictionary[key] = dict(x_values=x_values, y_values=new_y_values)
+    return local_dictionary
 
 
 
