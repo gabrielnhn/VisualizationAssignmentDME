@@ -84,7 +84,7 @@ def create_bar_plot(data_original, clean = True):
             # print(index[0:30],counts[0:30])
         #categorical columns
         else:
-            print(column_data)
+            # print(column_data)
             column_data = column_data.apply(lambda sal: sal.strip('.'))
 
             categories = column_data.value_counts().index.tolist()
@@ -123,7 +123,7 @@ def create_bar_plot(data_original, clean = True):
         output_plots.append(p)
         # show(p)
 
-    print(output_plots)
+    # print(output_plots)
     return output_plots, output_plots_dict
 
 
@@ -135,7 +135,7 @@ def function_all_p(data,column,index):
         if key == column:
             attribute = glob_dict[key]['x_values'][index]
             data_subset = data[data[column] == attribute]
-            print(data_subset)
+            # print(data_subset)
     # select all the columns except the 'Education'
     for data_column in data.columns:
         # if data_column != column:
@@ -305,16 +305,19 @@ class custom_callbacks:
         self.source = source
         self.figure = figure
 
-    def default_function(self, attr, old, new):
-        print("\t")
+    def update_all_plots(self):
+        new = self.new
         if new:
+
             index = new[0]
             new_values = function_all_p(data, self.feature, index)
             # new_values = precomputed[self.feature, index]
             for column, new_source in new_values.items():
+
                 # plot_dict[column]["source"].data = new_source
                 plot_dict[column]["source_compare"].data = new_source
                 plot_dict[column]["source_compare"].selected.indices = []
+                plot_dict[column]["plot"].title.text = column.title()
             
             # plot_dict[self.feature]["source_compare"].data = 
 
@@ -322,7 +325,19 @@ class custom_callbacks:
             index = None
             for column in plot_dict:
                 plot_dict[column]["source_compare"].data = {}
+                plot_dict[column]["plot"].title.text = column.title()
 
+
+
+    def default_function(self, attr, old, new):
+        self.new = new
+
+        print("\t")
+        for column in plot_dict:
+            plot_dict[column]["plot"].title.text = "Loading..."
+        curdoc().add_next_tick_callback(self.update_all_plots)
+        # return
+        
 
         # print(f"CALLBACK in feature `{self.feature}`, {self.source} IN PLOT {self.figure}, INDEX {index}")
             # cur_view.data = views[new[0]].data
