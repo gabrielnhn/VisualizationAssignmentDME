@@ -58,12 +58,12 @@ def arrange_plots_in_grid(plot_list, num_cols=4):
 # VIS1 COPY
 #global dict whatever
 glob_dict = {}
-for column in data.columns:
-    test = data[column].value_counts()
-    index = test.index.tolist()
-    counts = test.values.tolist()
-    dict_education = dict(x_values=index, y_values=counts)
-    glob_dict[column] = dict_education
+# for column in data.columns:
+#     test = data[column].value_counts()
+#     index = test.index.tolist()
+#     counts = test.values.tolist()
+#     dict_education = dict(x_values=index, y_values=counts)
+#     glob_dict[column] = dict_education
 # print(glob_dict)
 
 
@@ -87,7 +87,7 @@ def create_bar_plot(data_original, clean = True):
             sorted_counts = column_data.value_counts().sort_index()
             index = sorted_counts.index.tolist()
             counts = sorted_counts.values.tolist()  
-            # print(index[0:30],counts[0:30])
+            glob_dict[column] = dict(x_values=index, y_values=counts)
         #categorical columns
         else:
             # print(column_data)
@@ -96,7 +96,7 @@ def create_bar_plot(data_original, clean = True):
             categories = column_data.value_counts().index.tolist()
             
             counts = column_data.value_counts().values.tolist()
-            # print(categories[0:30],counts[0:30])
+            glob_dict[column] = dict(x_values=categories, y_values=counts)
 
         if pd.api.types.is_numeric_dtype(column_data):
             frequency_plot = {'x_values': index, 'y_values': counts}
