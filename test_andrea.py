@@ -11,6 +11,7 @@ from bokeh.io import curdoc
 # if you need more, import it at the top of the corresponding cell
 from bokeh.plotting import figure, gridplot, show
 from bokeh.layouts import column, grid
+from bokeh.layouts import column as bokeh_column
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.models import ColumnDataSource, HoverTool, NumeralTickFormatter, BasicTicker, PrintfTickFormatter, CustomJS, Select, axes
 from bokeh.models.annotations import Label
@@ -108,8 +109,8 @@ def create_bar_plot(data_original, clean = True):
 
         source = ColumnDataSource(frequency_plot)
         compare = ColumnDataSource({})
-        p.vbar(x='x_values', top='y_values', width=0.5, source=source, line_color='lightblue', fill_color='lightblue', line_width=2.5)
-        p.vbar(x='x_values', top='y_values', width=0.5, source=compare, line_color='lightblue', fill_color='red', line_width=2.5)
+        p.vbar(x='x_values', top='y_values', width=0.5, source=source, line_color='lightgreen', fill_color='lightgreen', line_width=2.5)
+        p.vbar(x='x_values', top='y_values', width=0.5, source=compare, line_color='orange', fill_color='orange', line_width=2.5)
         # Add hover tool to display values on hover
         # hover = HoverTool()
         # hover.tooltips = [(column.title(), "@x_values"), ("Count", "@y_values")]
@@ -202,6 +203,7 @@ def function_all_p(data,column,index):
 
 from bokeh.plotting import figure, show
 from bokeh.models import ColumnDataSource, HoverTool, TapTool, CustomJS
+from bokeh.models.widgets.markups import Div
 from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
 
@@ -405,9 +407,25 @@ for column, d in plot_dict.items():
 
 # Display the plots in a grid
 # grid = gridplot([[p1, p2], [p3]])
-grid = gridplot(arrange_plots_in_grid(grid_list))
+grid = gridplot(arrange_plots_in_grid(grid_list, num_cols=3))
+
+# div = Div(text="""Your <a href="https://en.wikipedia.org/wiki/HTML">HTML</a>-supported text is initialized with the <b>text</b> argument.  The
+# remaining div arguments are <b>width</b> and <b>height</b>. For this example, those values
+# are <i>200</i> and <i>100</i>, respectively.""",
+# width=200, height=100)
+
+HTML = """
+        <h1>Instructions:</h1>
+        <h2>1:Choose one of the plots;</h2>
+        <h2>2:Click on one of the bars;</h2>
+        <h2>3:Wait a few moments...</h2>
+        <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
+"""
+div = Div(text=HTML,
+width=900, height=200)
+
 
 # grid = grid_list[0]
 # show(grid)
-curdoc().add_root(grid)
+curdoc().add_root(bokeh_column(div, grid))
 
