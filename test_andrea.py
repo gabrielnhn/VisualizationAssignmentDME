@@ -129,42 +129,57 @@ def create_bar_plot(data_original, clean = True):
 
 
 ### magic
-# def function_all_p(data,column,index):
-#     dictionary = {}
-#     for key in glob_dict:
-#         if key == column:
-#             attribute = glob_dict[key]['x_values'][index]
-#             data_subset = data[data[column] == attribute]
-#             # print(data_subset)
-#     # select all the columns except the 'Education'
-#     for data_column in data.columns:
-#         # if data_column != column:
-#         if True:
-#             # get x_values for all other columns
-#             x_values = glob_dict[data_column]['x_values']
-#             # count the new y_values
-#             new_y_values = []
-#             for x in x_values:
-#                 new_y_values.append(len(data_subset[data_subset[data_column] == x]))
-#             dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
+def function_all_p(data,column,index):
+    dictionary = {}
+    for key in glob_dict:
+        if key == column:
+            attribute = glob_dict[key]['x_values'][index]
+            data_subset = data[data[column] == attribute]
+            # print(data_subset)
+    # select all the columns except the 'Education'
+    for data_column in data.columns:
+        # if data_column != column:
+        if True:
+            # get x_values for all other columns
+            x_values = glob_dict[data_column]['x_values']
+            # count the new y_values
+            new_y_values = []
+            for x in x_values:
+                new_y_values.append(len(data_subset[data_subset[data_column] == x]))
+            dictionary[data_column] = {'x_values': x_values,'y_values': new_y_values}
+    return dictionary
         
 
-#     return dictionary
-def function_all_p(data,column_name,index):
-    local_dictionary = {}
-    attribute = glob_dict[column_name]['x_values'][index]
-    # select all the columns except the column_name
-    for key in glob_dict:
-        # if key != column_name:
-        # get x_values for all other columns
-        x_values = glob_dict[key]['x_values']
-        # count the new y_values
-        new_y_values = []
-        for x in x_values[0:1]:
-            new_y_values.append(len(data[(data[key] == x) & (data[column_name] == attribute)]))
-            local_dictionary[key] = {'x_values': x_values,'y_values': new_y_values}
-    return local_dictionary
+# def function_all_p(data,column_name,index):
+#     local_dictionary = {}
+#     attribute = glob_dict[column_name]['x_values'][index]
+#     # select all the columns except the column_name
+#     for key in glob_dict:
+#         # if key != column_name:
+#         # get x_values for all other columns
+#         x_values = glob_dict[key]['x_values']
+#         # count the new y_values
+#         new_y_values = []
+#         for x in x_values[0:1]:
+#             new_y_values.append(len(data[(data[key] == x) & (data[column_name] == attribute)]))
+#             local_dictionary[key] = {'x_values': x_values,'y_values': new_y_values}
+#     return local_dictionary
 
+# def function_all_p(data,column_name,index):
+#     local_dictionary = {}
+#     attribute = glob_dict[column_name]['x_values'][index]
+#     # select all the columns except the column_name
+#     for key in glob_dict:
+#         if key != column_name:
+#             # get x_values for all other columns
+#             x_values = glob_dict[key]['x_values']
+#             # count the new y_values
+#             new_y_values = []
+#             print(len(x_values))
+#             for x in x_values:
+#                 new_y_values.append(len(data[(data[key] == x) & (data[column_name] == attribute)]))
+#                 local_dictionary[key] = {'x_values': x_values,'y_values': new_y_values}
+#     return local_dictionary
 
 
 
@@ -342,7 +357,6 @@ class custom_callbacks:
                 plot_dict[column]["plot"].title.text = column.title() + \
                     f" ({self.feature}={plot_dict[self.feature]["source_compare"].data["x_values"][index]})"
             
-            # plot_dict[self.feature]["source_compare"].data = 
 
         else:
             index = None
