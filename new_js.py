@@ -123,16 +123,6 @@ for source_full in list_source_full:
 
     setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
 
-        // keep titles dynamic while stuff is loading
-        //let dots = 0;  // Counter to track how many dots have been added
-        //const maxDots = 3;  // Maximum number of dots
-        //const intervalId = setInterval(function() {
-        //    dots = (dots + 1) % (maxDots + 1);  // Cycle between 0 to maxDots
-        //    //plotTitle.innerText = "Loading" + ".".repeat(dots);  // Update title with dots
-        //    list_titles.forEach((title) => title.text = "Loading" + ".".repeat(dots));
-        //}, 10);  // Update every 100ms    
-
-
         // get selected indices and length
         const selected_indices = source_full.selected.indices;
         let length_indices = source_full.selected.indices.length;
@@ -142,21 +132,15 @@ for source_full in list_source_full:
             console.log(data);
             var selected_values = [];
             
-             // reset the selection of all other bar plots
+            // get x_value
             for (let i = 0; i < list_source_full.length; i++) {
-                if (list_source_full[i] != source_full){
-                //#     //# list_source_full[i].selected.indices = [];
-                //#     //# list_source_subset[i].selected.indices = [];
-                }
-                // transform the indices to the corresponding x_values
-                else{
+                if (list_source_full[i] == source_full){
                     var x_value = x_values[i];
                     for (let j = 0; j < length_indices; j++){
                         selected_values.push(x_value[selected_indices[j]]);
                     }
                 }
             }
-
 
             var column_data = data[column_name];
             var filtered_rows = [];
@@ -166,8 +150,6 @@ for source_full in list_source_full:
                    filtered_rows.push(parseInt(index));
                 }
             }
-            // titles are updating, stop loading stuff
-            //clearInterval(intervalId);
 
             // for the selected rows, filter the values corresponding updating bar plot
             for (let i = 0; i < list_source_full.length; i++){
@@ -193,17 +175,11 @@ for source_full in list_source_full:
             }
 
             // reset the selection of all other bar plots
-            for (let i = 0; i < list_source_full.length; i++) {
+            for (let i = 0; i < list_source_full.length; i++)
+            {
                 if (list_source_full[i] != source_full){
                     list_source_full[i].selected.indices = [];
                     list_source_subset[i].selected.indices = [];
-                }
-                // transform the indices to the corresponding x_values
-                else{
-                    var x_value = x_values[i];
-                    for (let j = 0; j < length_indices; j++){
-                        selected_values.push(x_value[selected_indices[j]]);
-                    }
                 }
             }
         }
@@ -212,7 +188,7 @@ for source_full in list_source_full:
         // unselecting
             console.log("UNSELECTED");
             // check if no source is selected
-            console.log(list_source_full.map((source) => source.selected.indices.length))
+            //console.log(list_source_full.map((source) => source.selected.indices.length))
             if ( list_source_full.every((source) => source.selected.indices.length === 0) )
             {
                 console.log("every empty. reset.");
