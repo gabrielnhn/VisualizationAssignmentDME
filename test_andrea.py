@@ -28,6 +28,9 @@ data = pd.read_csv("datasets/Visualization/adult_all.csv")
 
 data.head()
 
+# that was the header of the assignment
+###############################
+
 def arrange_plots_in_grid(plot_list, num_cols=4):
     # Calculate the number of rows required
     num_rows = math.ceil(len(plot_list) / num_cols)
@@ -43,12 +46,8 @@ def arrange_plots_in_grid(plot_list, num_cols=4):
     
     return grid
 
-###############################
-# VIS1 COPY
 #global dict whatever
 glob_dict = {}
-
-
 
 def create_bar_plot(data_original, clean = True):
     
@@ -172,6 +171,7 @@ class custom_callbacks:
 grid_list, plot_dict = create_bar_plot(data)
 
 for column, d in plot_dict.items():
+    print(d["source_all"].selected)
     d["source_all"].selected.on_change("indices", custom_callbacks(column, d["source_all"], d["plot"]).default_function)
 
 

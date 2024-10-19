@@ -9,9 +9,11 @@ import math
 # We import a range of bokeh functionality that will likely be needed already
 # if you need more, import it at the top of the corresponding cell
 from bokeh.plotting import figure, gridplot, show
-from bokeh.layouts import column, grid
+from bokeh.layouts import grid
+from bokeh.layouts import column as bokeh_column
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.models import ColumnDataSource, HoverTool, NumeralTickFormatter, BasicTicker, PrintfTickFormatter, CustomJS, Select, axes
+from bokeh.models.widgets import Div
 from bokeh.models.annotations import Label
 from bokeh.io import output_notebook, curdoc
 
@@ -108,34 +110,54 @@ for p,source in zip(list_plot,list_source):
 index = 0
 data_json = data.to_json()
 
+
 for source_full in list_source_full:
     column_name = data.columns[index]
+    list_titles = [plot.title for plot in list_plot]
     callback_select = CustomJS(args=dict(source_full=source_full, list_source_full = list_source_full.copy(),
                                          list_source_subset=list_source_subset,raw_data = data_json,
-                                         column_name = column_name, x_values = x_list, columns = data.columns), code="""
+                                         column_name = column_name, x_values = x_list, columns = data.columns,
+                                         list_titles=list_titles), code="""
+        
+    list_titles.forEach((title) => title.text = "Loading...");
+
+    setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
+
+        // keep titles dynamic while stuff is loading
+        //let dots = 0;  // Counter to track how many dots have been added
+        //const maxDots = 3;  // Maximum number of dots
+        //const intervalId = setInterval(function() {
+        //    dots = (dots + 1) % (maxDots + 1);  // Cycle between 0 to maxDots
+        //    //plotTitle.innerText = "Loading" + ".".repeat(dots);  // Update title with dots
+        //    list_titles.forEach((title) => title.text = "Loading" + ".".repeat(dots));
+        //}, 10);  // Update every 100ms    
+
+
         // get selected indices and length
         const selected_indices = source_full.selected.indices;
         let length_indices = source_full.selected.indices.length;
         if (length_indices > 0) {
             // transform raw data
-            console.log(raw_data);
             var data = JSON.parse(raw_data);
             console.log(data);
-            //var data = raw_data;
             var selected_values = [];
-            // reset the selection of all other bar plots
+            
+             // reset the selection of all other bar plots
             for (let i = 0; i < list_source_full.length; i++) {
-                    if (list_source_full[i] != source_full){
-                        list_source_full[i].selected.indices = [];
+                if (list_source_full[i] != source_full){
+                //#     //# list_source_full[i].selected.indices = [];
+                //#     //# list_source_subset[i].selected.indices = [];
+                }
+                // transform the indices to the corresponding x_values
+                else{
+                    var x_value = x_values[i];
+                    for (let j = 0; j < length_indices; j++){
+                        selected_values.push(x_value[selected_indices[j]]);
                     }
-                    // transform the indices to the corresponding x_values
-                    else{
-                        var x_value = x_values[i];
-                        for (let j = 0; j < length_indices; j++){
-                            selected_values.push(x_value[selected_indices[j]]);
-                        }
-                    }
-                 }
+                }
+            }
+
+
             var column_data = data[column_name];
             var filtered_rows = [];
             // for the column data calculate the rows corresponding to selected x_values
@@ -144,6 +166,9 @@ for source_full in list_source_full:
                    filtered_rows.push(parseInt(index));
                 }
             }
+            // titles are updating, stop loading stuff
+            //clearInterval(intervalId);
+
             // for the selected rows, filter the values corresponding updating bar plot
             for (let i = 0; i < list_source_full.length; i++){
                 var x_value = x_values[i];
@@ -160,20 +185,62 @@ for source_full in list_source_full:
                 }
                 list_source_subset[i].data.y_values = new_y_values;
                 list_source_subset[i].change.emit();
+                list_titles[i].text = columns[i]+" (when "+column_name+"="+selected_values+")";
+
+                // update title
+                //console.log(columns);
+
+            }
+
+            // reset the selection of all other bar plots
+            for (let i = 0; i < list_source_full.length; i++) {
+                if (list_source_full[i] != source_full){
+                    list_source_full[i].selected.indices = [];
+                    list_source_subset[i].selected.indices = [];
+                }
+                // transform the indices to the corresponding x_values
+                else{
+                    var x_value = x_values[i];
+                    for (let j = 0; j < length_indices; j++){
+                        selected_values.push(x_value[selected_indices[j]]);
+                    }
+                }
             }
         }
         
         else {
-            for (let i = 0; i < list_source_subset.length; i++){
-                var x_value = x_values[i];
-                var new_y_values = [];
-                for (let j = 0; j < x_value.length; j++){
-                    new_y_values.push(0);
+        // unselecting
+            console.log("UNSELECTED");
+            // check if no source is selected
+            console.log(list_source_full.map((source) => source.selected.indices.length))
+            if ( list_source_full.every((source) => source.selected.indices.length === 0) )
+            {
+                console.log("every empty. reset.");
+
+                for (let i = 0; i < list_source_subset.length; i++){
+                    var x_value = x_values[i];
+                    var new_y_values = [];
+                    for (let j = 0; j < x_value.length; j++){
+                        new_y_values.push(0);
+                    }
+                    list_source_subset[i].data.y_values = new_y_values;
+                    list_source_subset[i].change.emit();
+                    list_titles[i].text = columns[i];
                 }
-                list_source_subset[i].data.y_values = new_y_values;
-                list_source_subset[i].change.emit();
             }
+
+
         }
+    }, 100); // end timeout
+
+
+    // restore names
+    //# let original_list_titles_text = list_titles.map((title) => title.text); 
+    //# list_titles.forEach((title) => title.text = "Loading");
+    //# for(let i = 0; i < list_titles.length; i++)
+    //# {
+    //#     list_titles[i].text = original_list_titles_text[i] + " when
+    //# }
     """)
     source_full.selected.js_on_change('indices', callback_select)
     index = index + 1
@@ -182,5 +249,18 @@ for source_full in list_source_full:
 # test_plot = create_grid(list_plot)
 test_plot = arrange_plots_in_grid(list_plot)
 test_plot = grid(test_plot)
+
+HTML = """
+        <h1>Instructions:</h1>
+        <h2>1:Choose one of the plots;</h2>
+        <h2>2:Click on one of the bars;</h2>
+        <h2>3:Wait a few moments...</h2>
+        <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
+"""
+div = Div(text=HTML,
+width=900, height=300)
+
+plot = bokeh_column(div, test_plot)
+
 # show(test_plot)
-curdoc().add_root(test_plot)
+curdoc().add_root(plot)
