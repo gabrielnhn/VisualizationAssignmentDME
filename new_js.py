@@ -54,10 +54,12 @@ glob_dict = {}
 x_list = []
 # Define a function to create individual bar plots for categorical and numerical columns
 def create_bar_plot(data, clean = True):
+    TOOLS="pan,box_zoom,tap, hover"
     list_plot = []
     list_source = []
     columns = data.columns.tolist()
     for column in columns:
+        TOOLTIPS=[(column.title(), "@x_values"), ("Count", "@y_values")]
         # replace '?' by NAN values
         column_data = data[column].replace("?", np.nan).dropna()
         # numerical columns
@@ -77,168 +79,174 @@ def create_bar_plot(data, clean = True):
             x_list.append(categories)
         if pd.api.types.is_numeric_dtype(column_data):
             frequency_plot = {'x_values': index, 'y_values': counts}
-            p = figure(height=600, width=600, title=column.title(), toolbar_location="above", tools="tap,pan,wheel_zoom,box_zoom,reset")
+            p = figure(height=200, width=200, title=column.title(),
+                       toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
             p.xaxis.formatter = NumeralTickFormatter(format="0,0")
         else:
             frequency_plot = {'x_values': categories, 'y_values': counts}
-            p = figure(x_range=categories,height=600, width=600, title=column.title(), toolbar_location="above", tools="tap,pan,wheel_zoom,box_zoom,reset")
+            p = figure(x_range=categories,height=200, width=200, title=column.title(),
+                       toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
         list_plot.append(p)
     return list_plot,list_source
     
-print("Creating original plots...")
+print("Creating original plots...", end="")
 list_plot,list_source = create_bar_plot(data)
-print("\tDone.")
+print(" Done.")
 
 
+print("Adjusting column data sources...", end="")
 index = 0
 list_source_full = []
 list_source_subset = []
 for p,source in zip(list_plot,list_source):
-    new_source = dict(x_values = source['x_values'],y_values=[0 for i in source['y_values'] ])
     source_full = ColumnDataSource(source)
     list_source_full.append(source_full)
+
+    new_source = dict(x_values = source['x_values'],y_values=[0 for i in source['y_values'] ])
     source_subset = ColumnDataSource(new_source)
     list_source_subset.append(source_subset)
     p.vbar(x='x_values', top='y_values', width=0.5, source=source_full, line_color='lightblue', fill_color='lightblue', line_width=2.5)
-    p.vbar(x='x_values', top='y_values', width=0.5, source=source_subset, line_color='lightgreen', fill_color='lightgreen', line_width=2.5)
+    p.vbar(x='x_values', top='y_values', width=0.5, source=source_subset, line_color='orange', fill_color='orange', line_width=2.5)
     # # Add hover tool to display values on hover
-    hover = HoverTool()
-    hover.tooltips = [(data.columns[index], "@x_values"), ("Count", "@y_values")]
-    p.add_tools(hover)
+    # hover = HoverTool()
+    # hover.tooltips = [(data.columns[index], "@x_values"), ("Count", "@y_values")]
+    # p.add_tools(hover)
     # Add the TapTool and link it to the callback
     # Format the y-axis with commas as well
     p.xaxis.major_label_orientation = 1.0
 
+print(" Done.")
+
+
+javascript_code = """
+list_titles.forEach((title) => title.text = "Loading...");
+
+setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
+
+    // get selected indices and length
+    const selected_indices = source_full.selected.indices;
+    let length_indices = source_full.selected.indices.length;
+    if (length_indices > 0) {
+        // transform raw data
+        var data = JSON.parse(raw_data);
+        console.log(data);
+        var selected_values = [];
+        
+        // get x_value
+        for (let i = 0; i < list_source_full.length; i++) {
+            if (list_source_full[i] == source_full){
+                var x_value = x_values[i];
+                for (let j = 0; j < length_indices; j++){
+                    selected_values.push(x_value[selected_indices[j]]);
+                }
+            }
+        }
+
+        var column_data = data[column_name];
+        var filtered_rows = [];
+        // for the column data calculate the rows corresponding to selected x_values
+        for (const [index, value] of Object.entries(column_data)) {
+            if (Object.values(selected_values).indexOf(value) > -1) {
+                filtered_rows.push(parseInt(index));
+            }
+        }
+
+        // for the selected rows, filter the values corresponding updating bar plot
+        for (let i = 0; i < list_source_full.length; i++){
+            var x_value = x_values[i];
+            // get the column of target bar plot
+            var column_data = data[columns[i]];
+            // filter the column
+            var final_data = [];
+            for (let j = 0; j < filtered_rows.length; j++){
+                final_data.push(column_data[filtered_rows[j]]);
+            }
+            var new_y_values = [];
+            for (let j = 0; j < x_value.length; j++){
+                new_y_values.push(final_data.filter(x => x==x_value[j]).length);
+            }
+            list_source_subset[i].data.y_values = new_y_values;
+            list_source_subset[i].change.emit();
+            list_titles[i].text = columns[i]+" (when "+column_name+"="+selected_values+")";
+
+            // update title
+            //console.log(columns);
+
+        }
+
+        // reset the selection of all other bar plots
+        for (let i = 0; i < list_source_full.length; i++)
+        {
+            if (list_source_full[i] != source_full){
+                list_source_full[i].selected.indices = [];
+                list_source_subset[i].selected.indices = [];
+            }
+        }
+    }
+    
+    else {
+    // unselecting
+        console.log("UNSELECTED");
+        // check if no source is selected
+        //console.log(list_source_full.map((source) => source.selected.indices.length))
+        if ( list_source_full.every((source) => source.selected.indices.length === 0) )
+        {
+            console.log("every empty. reset.");
+
+            for (let i = 0; i < list_source_subset.length; i++){
+                var x_value = x_values[i];
+                var new_y_values = [];
+                for (let j = 0; j < x_value.length; j++){
+                    new_y_values.push(0);
+                }
+                list_source_subset[i].data.y_values = new_y_values;
+                list_source_subset[i].change.emit();
+                list_titles[i].text = columns[i];
+            }
+        }
+
+
+    }
+}, 100); // end timeout
+"""
+
+print("Setting callbacks...", end="")
+
 index = 0
 data_json = data.to_json()
-
-
+# list_source_full_copy = list_source_full.copy()
 for source_full in list_source_full:
     column_name = data.columns[index]
     list_titles = [plot.title for plot in list_plot]
     callback_select = CustomJS(args=dict(source_full=source_full, list_source_full = list_source_full.copy(),
                                          list_source_subset=list_source_subset,raw_data = data_json,
                                          column_name = column_name, x_values = x_list, columns = data.columns,
-                                         list_titles=list_titles), code="""
-        
-    list_titles.forEach((title) => title.text = "Loading...");
-
-    setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
-
-        // get selected indices and length
-        const selected_indices = source_full.selected.indices;
-        let length_indices = source_full.selected.indices.length;
-        if (length_indices > 0) {
-            // transform raw data
-            var data = JSON.parse(raw_data);
-            console.log(data);
-            var selected_values = [];
-            
-            // get x_value
-            for (let i = 0; i < list_source_full.length; i++) {
-                if (list_source_full[i] == source_full){
-                    var x_value = x_values[i];
-                    for (let j = 0; j < length_indices; j++){
-                        selected_values.push(x_value[selected_indices[j]]);
-                    }
-                }
-            }
-
-            var column_data = data[column_name];
-            var filtered_rows = [];
-            // for the column data calculate the rows corresponding to selected x_values
-            for (const [index, value] of Object.entries(column_data)) {
-                if (Object.values(selected_values).indexOf(value) > -1) {
-                   filtered_rows.push(parseInt(index));
-                }
-            }
-
-            // for the selected rows, filter the values corresponding updating bar plot
-            for (let i = 0; i < list_source_full.length; i++){
-                var x_value = x_values[i];
-                // get the column of target bar plot
-                var column_data = data[columns[i]];
-                // filter the column
-                var final_data = [];
-                for (let j = 0; j < filtered_rows.length; j++){
-                    final_data.push(column_data[filtered_rows[j]]);
-                }
-                var new_y_values = [];
-                for (let j = 0; j < x_value.length; j++){
-                    new_y_values.push(final_data.filter(x => x==x_value[j]).length);
-                }
-                list_source_subset[i].data.y_values = new_y_values;
-                list_source_subset[i].change.emit();
-                list_titles[i].text = columns[i]+" (when "+column_name+"="+selected_values+")";
-
-                // update title
-                //console.log(columns);
-
-            }
-
-            // reset the selection of all other bar plots
-            for (let i = 0; i < list_source_full.length; i++)
-            {
-                if (list_source_full[i] != source_full){
-                    list_source_full[i].selected.indices = [];
-                    list_source_subset[i].selected.indices = [];
-                }
-            }
-        }
-        
-        else {
-        // unselecting
-            console.log("UNSELECTED");
-            // check if no source is selected
-            //console.log(list_source_full.map((source) => source.selected.indices.length))
-            if ( list_source_full.every((source) => source.selected.indices.length === 0) )
-            {
-                console.log("every empty. reset.");
-
-                for (let i = 0; i < list_source_subset.length; i++){
-                    var x_value = x_values[i];
-                    var new_y_values = [];
-                    for (let j = 0; j < x_value.length; j++){
-                        new_y_values.push(0);
-                    }
-                    list_source_subset[i].data.y_values = new_y_values;
-                    list_source_subset[i].change.emit();
-                    list_titles[i].text = columns[i];
-                }
-            }
-
-
-        }
-    }, 100); // end timeout
-
-
-    // restore names
-    //# let original_list_titles_text = list_titles.map((title) => title.text); 
-    //# list_titles.forEach((title) => title.text = "Loading");
-    //# for(let i = 0; i < list_titles.length; i++)
-    //# {
-    //#     list_titles[i].text = original_list_titles_text[i] + " when
-    //# }
-    """)
+                                         list_titles=list_titles), code=javascript_code)
     source_full.selected.js_on_change('indices', callback_select)
     index = index + 1
 
+print(" Done.")
+
 
 # test_plot = create_grid(list_plot)
-test_plot = arrange_plots_in_grid(list_plot)
+
+print("Arranging plot grid...", end="")
+test_plot = arrange_plots_in_grid(list_plot, num_cols=2)
 test_plot = grid(test_plot)
 
 HTML = """
-        <h1>Instructions:</h1>
-        <h2>1:Choose one of the plots;</h2>
-        <h2>2:Click on one of the bars;</h2>
-        <h2>3:Wait a few moments...</h2>
-        <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
+    <h1>Instructions:</h1>
+    <h2>1:Choose one of the plots;</h2>
+    <h2>2:Click on one of the bars;</h2>
+    <h2>3:Wait a few moments...</h2>
+    <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
 """
 div = Div(text=HTML,
 width=900, height=300)
 
 plot = bokeh_column(div, test_plot)
 
+print(" Done.")
+print("Building Bokeh App...")
 # show(plot)
 curdoc().add_root(plot)
