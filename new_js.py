@@ -4,16 +4,12 @@
 # numpy and pandas
 import numpy as np
 import pandas as pd
-import math
 
 # We import a range of bokeh functionality that will likely be needed already
 # if you need more, import it at the top of the corresponding cell
 from bokeh.plotting import figure, gridplot, show
-from bokeh.layouts import grid
-from bokeh.layouts import column as bokeh_column
 from bokeh.transform import factor_cmap, linear_cmap
 from bokeh.models import ColumnDataSource, HoverTool, NumeralTickFormatter, BasicTicker, PrintfTickFormatter, CustomJS, Select, axes
-from bokeh.models.widgets import Div
 from bokeh.models.annotations import Label
 from bokeh.io import output_notebook, curdoc
 
@@ -36,6 +32,13 @@ data.head()
 # }
 
 # data = pd.DataFrame(data)
+
+# from here its ready to be copied into notebook
+import math
+from bokeh.models.widgets import Div
+from bokeh.layouts import column as bokeh_column
+from bokeh.layouts import grid
+
 
 def arrange_plots_in_grid(plot_list, num_cols=4):
     num_rows = math.ceil(len(plot_list) / num_cols)
@@ -82,11 +85,10 @@ def create_bar_plot(data, clean = True):
         list_plot.append(p)
     return list_plot,list_source
     
+print("Creating original plots...")
 list_plot,list_source = create_bar_plot(data)
-# print(data.columns)
-# print(glob_dict)
-# print(x_list)
-# print(data)
+print("\tDone.")
+
 
 index = 0
 list_source_full = []
@@ -238,5 +240,5 @@ width=900, height=300)
 
 plot = bokeh_column(div, test_plot)
 
-# show(test_plot)
+# show(plot)
 curdoc().add_root(plot)
