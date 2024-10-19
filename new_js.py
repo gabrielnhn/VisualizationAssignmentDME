@@ -35,6 +35,7 @@ data.head()
 
 # from here its ready to be copied into notebook
 import math
+import json
 from bokeh.models.widgets import Div
 from bokeh.layouts import column as bokeh_column
 from bokeh.layouts import grid
@@ -79,12 +80,12 @@ def create_bar_plot(data, clean = True):
             x_list.append(categories)
         if pd.api.types.is_numeric_dtype(column_data):
             frequency_plot = {'x_values': index, 'y_values': counts}
-            p = figure(height=600, width=600, title=column.title(),
+            p = figure(height=600, width=600, title=column,
                        toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
             p.xaxis.formatter = NumeralTickFormatter(format="0,0")
         else:
             frequency_plot = {'x_values': categories, 'y_values': counts}
-            p = figure(x_range=categories,height=600, width=600, title=column.title(),
+            p = figure(x_range=categories,height=600, width=600, title=column,
                        toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
         list_plot.append(p)
     return list_plot,list_source
@@ -100,6 +101,7 @@ list_source_full = []
 list_source_subset = []
 for p,source in zip(list_plot,list_source):
     source_full = ColumnDataSource(source)
+    source_full.name = p.title.text
     list_source_full.append(source_full)
 
     new_source = dict(x_values = source['x_values'],y_values=[0 for i in source['y_values'] ])
@@ -117,24 +119,44 @@ for p,source in zip(list_plot,list_source):
 
 print(" Done.")
 
+data_json = data.to_json()
 
 javascript_code = """
+
+function getSourceFull(array, name) {
+    //array.forEach(function return_if_match(source)
+    for(let k = 0; k < array.length; k++)
+    {
+        let source = array[k];
+        if (source.name === name)
+            return source;
+    }
+}
+
+
 list_titles.forEach((title) => title.text = "Loading...");
 
 setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
 
     // get selected indices and length
+    let source_full = getSourceFull(list_source_full, column_name);
     const selected_indices = source_full.selected.indices;
-    let length_indices = source_full.selected.indices.length;
+    let length_indices = selected_indices.length;
     if (length_indices > 0) {
         // transform raw data
-        var data = JSON.parse(raw_data);
-        console.log(data);
+        
+        //let data = window.data;
+        if (typeof data === 'undefined') {
+            var data = JSON.parse(raw_data);
+        }
+
+        //console.log(data);
         var selected_values = [];
         
         // get x_value
         for (let i = 0; i < list_source_full.length; i++) {
-            if (list_source_full[i] == source_full){
+            //if (list_source_full[i] == source_full){
+            if (list_source_full[i].name == column_name){
                 var x_value = x_values[i];
                 for (let j = 0; j < length_indices; j++){
                     selected_values.push(x_value[selected_indices[j]]);
@@ -212,20 +234,25 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
 
 print("Setting callbacks...", end="")
 
-index = 0
-data_json = data.to_json()
 # list_source_full_copy = list_source_full.copy()
+list_titles = [plot.title for plot in list_plot]
+index = 0
 for source_full in list_source_full:
     column_name = data.columns[index]
-    list_titles = [plot.title for plot in list_plot]
-    callback_select = CustomJS(args=dict(source_full=source_full, list_source_full = list_source_full.copy(),
-                                         list_source_subset=list_source_subset,raw_data = data_json,
-                                         column_name = column_name, x_values = x_list, columns = data.columns,
-                                         list_titles=list_titles), code=javascript_code)
-    source_full.selected.js_on_change('indices', callback_select)
-    index = index + 1
 
+    args=dict(column_name = column_name,
+             list_source_full = list_source_full.copy(),
+                list_source_subset=list_source_subset,raw_data = data_json,
+                x_values = x_list, columns = data.columns, list_titles=list_titles,)
+
+    callback_select = CustomJS(args=args, code=javascript_code)
+
+    source_full.selected.js_on_change('indices', callback_select)
+    # source_full.js_on_change('selected.indices', callback_select)
+    index = index + 1
 print(" Done.")
+
+
 
 
 # test_plot = create_grid(list_plot)
@@ -241,12 +268,27 @@ HTML = """
     <h2>3:Wait a few moments...</h2>
     <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
 """
-div = Div(text=HTML,
-width=900, height=300)
+div = Div(text=HTML,width=900, height=300)
+
+# print("Adding global data to JS...", end="")
+
+# global_data_script_code = f"""
+#     let raw_data = {data_json};
+#     var window.data = JSON.parse(raw_data);
+#     console.log("WINDOW DATA");
+#     console.log(window.data);
+# """
+# global_data_script = CustomJS(code=global_data_script_code)
+
+# div.js_on_change('text', CustomJS(code=global_data_script_code))
+# print(" Done.")
+
+
 
 plot = bokeh_column(div, test_plot)
 
 print(" Done.")
 print("Building Bokeh App...")
-# show(plot)
 curdoc().add_root(plot)
+# show(plot)
+
