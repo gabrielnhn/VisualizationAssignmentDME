@@ -79,12 +79,12 @@ def create_bar_plot(data, clean = True):
             x_list.append(categories)
         if pd.api.types.is_numeric_dtype(column_data):
             frequency_plot = {'x_values': index, 'y_values': counts}
-            p = figure(height=200, width=200, title=column.title(),
+            p = figure(height=600, width=600, title=column.title(),
                        toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
             p.xaxis.formatter = NumeralTickFormatter(format="0,0")
         else:
             frequency_plot = {'x_values': categories, 'y_values': counts}
-            p = figure(x_range=categories,height=200, width=200, title=column.title(),
+            p = figure(x_range=categories,height=600, width=600, title=column.title(),
                        toolbar_location="above", tools=TOOLS, tooltips=TOOLTIPS)
         list_plot.append(p)
     return list_plot,list_source
