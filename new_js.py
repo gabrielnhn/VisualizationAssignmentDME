@@ -135,8 +135,9 @@ function getSourceFull(array, name) {
     }
 }
 
-
-
+if (length_indices > 0) {
+    list_titles.forEach((title) => title.text = "Loading...");
+}
 
 setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
 
@@ -271,21 +272,6 @@ HTML = """
     <h2>4:The selected subset of the data should be plotted in comparison to all the data!</h2>
 """
 div = Div(text=HTML,width=900, height=300)
-
-# print("Adding global data to JS...", end="")
-
-# global_data_script_code = f"""
-#     let raw_data = {data_json};
-#     var window.data = JSON.parse(raw_data);
-#     console.log("WINDOW DATA");
-#     console.log(window.data);
-# """
-# global_data_script = CustomJS(code=global_data_script_code)
-
-# div.js_on_change('text', CustomJS(code=global_data_script_code))
-# print(" Done.")
-
-
 
 plot = bokeh_column(div, test_plot)
 
