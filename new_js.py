@@ -119,7 +119,9 @@ for p,source in zip(list_plot,list_source):
 
 print(" Done.")
 
-data_json = data.to_json()
+# data_json = data.to_json()
+
+data_cds = ColumnDataSource(data)
 
 javascript_code = """
 
@@ -145,12 +147,11 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
     if (length_indices > 0) {
         // transform raw data
         
-        //let data = window.data;
-        if (typeof data === 'undefined') {
-            var data = JSON.parse(raw_data);
-        }
+        //if (typeof data === 'undefined') {
+        //    var data = JSON.parse(raw_data);
+        //}
 
-        //console.log(data);
+        var data = raw_data.data;
         var selected_values = [];
         
         // get x_value
@@ -165,6 +166,9 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
         }
 
         var column_data = data[column_name];
+        console.log(raw_data.data);
+        console.log(column_name);
+        console.log(column_data);
         var filtered_rows = [];
         // for the column data calculate the rows corresponding to selected x_values
         for (const [index, value] of Object.entries(column_data)) {
@@ -242,7 +246,7 @@ for source_full in list_source_full:
 
     args=dict(column_name = column_name,
              list_source_full = list_source_full.copy(),
-                list_source_subset=list_source_subset,raw_data = data_json,
+                list_source_subset=list_source_subset,raw_data = data_cds,
                 x_values = x_list, columns = data.columns, list_titles=list_titles,)
 
     callback_select = CustomJS(args=args, code=javascript_code)
