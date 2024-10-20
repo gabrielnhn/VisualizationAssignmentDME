@@ -136,7 +136,7 @@ function getSourceFull(array, name) {
 }
 
 
-list_titles.forEach((title) => title.text = "Loading...");
+
 
 setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
 
@@ -144,19 +144,15 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
     let source_full = getSourceFull(list_source_full, column_name);
     const selected_indices = source_full.selected.indices;
     let length_indices = selected_indices.length;
-    if (length_indices > 0) {
-        // transform raw data
-        
-        //if (typeof data === 'undefined') {
-        //    var data = JSON.parse(raw_data);
-        //}
 
+    if (length_indices > 0) {
+
+        list_titles.forEach((title) => title.text = "Loading...");
         var data = raw_data.data;
         var selected_values = [];
         
         // get x_value
         for (let i = 0; i < list_source_full.length; i++) {
-            //if (list_source_full[i] == source_full){
             if (list_source_full[i].name == column_name){
                 var x_value = x_values[i];
                 for (let j = 0; j < length_indices; j++){
@@ -166,9 +162,6 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
         }
 
         var column_data = data[column_name];
-        console.log(raw_data.data);
-        console.log(column_name);
-        console.log(column_data);
         var filtered_rows = [];
         // for the column data calculate the rows corresponding to selected x_values
         for (const [index, value] of Object.entries(column_data)) {
@@ -193,32 +186,37 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
             }
             list_source_subset[i].data.y_values = new_y_values;
             list_source_subset[i].change.emit();
-            list_titles[i].text = columns[i]+" (when "+column_name+"="+selected_values+")";
+            let title = columns[i]
+            if (selected_values.length > 0)
+            {
+                title += " (when "+column_name+"="+selected_values+")";
+            }
+            list_titles[i].text = title;
+            list_titles[i].change.emit();
+            //console.log(title);
 
-            // update title
-            //console.log(columns);
 
         }
 
         // reset the selection of all other bar plots
         for (let i = 0; i < list_source_full.length; i++)
         {
-            if (list_source_full[i] != source_full){
+            //if (list_source_full[i] != source_full){
+            if (list_source_full[i].name != column_name){
                 list_source_full[i].selected.indices = [];
                 list_source_subset[i].selected.indices = [];
             }
         }
-    }
     
+    }
     else {
     // unselecting
-        console.log("UNSELECTED");
+        //console.log("UNSELECTED");
         // check if no source is selected
         //console.log(list_source_full.map((source) => source.selected.indices.length))
         if ( list_source_full.every((source) => source.selected.indices.length === 0) )
         {
             console.log("every empty. reset.");
-
             for (let i = 0; i < list_source_subset.length; i++){
                 var x_value = x_values[i];
                 var new_y_values = [];
@@ -228,10 +226,10 @@ setTimeout(function() { // timeout so browser doesnt get stuck doing the calcula
                 list_source_subset[i].data.y_values = new_y_values;
                 list_source_subset[i].change.emit();
                 list_titles[i].text = columns[i];
+                list_titles[i].change.emit();
+
             }
         }
-
-
     }
 }, 100); // end timeout
 """
