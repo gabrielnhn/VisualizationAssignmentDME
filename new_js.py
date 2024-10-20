@@ -135,16 +135,18 @@ function getSourceFull(array, name) {
     }
 }
 
+// get selected indices and length
+let source_full = getSourceFull(list_source_full, column_name);
+const selected_indices = source_full.selected.indices;
+let length_indices = selected_indices.length;
+
 if (length_indices > 0) {
     list_titles.forEach((title) => title.text = "Loading...");
 }
 
 setTimeout(function() { // timeout so browser doesnt get stuck doing the calculations
 
-    // get selected indices and length
-    let source_full = getSourceFull(list_source_full, column_name);
-    const selected_indices = source_full.selected.indices;
-    let length_indices = selected_indices.length;
+    
 
     if (length_indices > 0) {
 
